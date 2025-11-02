@@ -1,10 +1,8 @@
 from sqlalchemy import (
-    Column, String, Text, DateTime, ForeignKey
+    Column, String, Text, DateTime, ForeignKey, Integer
 )
-from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship, declarative_base
 from datetime import datetime, timezone
-import uuid
 
 Base = declarative_base()
 
@@ -12,10 +10,11 @@ Base = declarative_base()
 class UserAccount(Base):
     __tablename__ = "user_accounts"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     gmail_address = Column(String, nullable=False, unique=True)
-    access_token = Column(String, nullable=False)
-    refresh_token = Column(String, nullable=False)
+
+    name = Column(String, nullable=True)
+    picture = Column(String, nullable=True)
 
     # Relationships
     categories = relationship("Category", back_populates="account", cascade="all, delete-orphan")
@@ -25,10 +24,10 @@ class UserAccount(Base):
 class Category(Base):
     __tablename__ = "categories"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, nullable=False)
     description = Column(Text)
-    account_id = Column(UUID(as_uuid=True), ForeignKey("user_accounts.id"), nullable=False)
+    account_id = Column(Integer, ForeignKey("user_accounts.id"), nullable=False)
 
     # Relationship
     account = relationship("UserAccount", back_populates="categories")
@@ -39,8 +38,8 @@ class Email(Base):
     __tablename__ = "emails"
 
     gmail_msg_id = Column(String, primary_key=True)
-    account_id = Column(UUID(as_uuid=True), ForeignKey("user_accounts.id"), nullable=False)
-    category_id = Column(UUID(as_uuid=True), ForeignKey("categories.id"), nullable=True)
+    account_id = Column(Integer, ForeignKey("user_accounts.id"), nullable=False)
+    category_id = Column(Integer, ForeignKey("categories.id"), nullable=True)
     received_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
     summary = Column(Text)
     summary_created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))

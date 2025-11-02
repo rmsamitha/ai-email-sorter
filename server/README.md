@@ -18,6 +18,18 @@ python -m venv venv
 pip install -r requirements.txt
 ```
 
+### Add your .env file
+
+Export your envs from the .env file
+
+1. Create a file named .env in the project root
+
+2. Add the following content
+
+```bash
+OPENAI_API_KEY=your-api-key-here
+```
+
 ## Running the Server
 
 ```bash
