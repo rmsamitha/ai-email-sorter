@@ -18,6 +18,8 @@ async def categorize(user_id: int, mail_content: str) -> str:
     db: Session = SessionLocal()
     try:
         categories = db.query(Category).filter(Category.account_id == user_id).all()
+        print(">>>>>> categories: ", categories)
+        
         if not categories:
             return "No categories found for this user."
 

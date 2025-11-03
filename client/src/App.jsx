@@ -142,12 +142,15 @@ const LoginScreen = ({ onLogin }) => {
           picture: data.user.picture || `https://ui-avatars.com/api/?name=${data.user.name}&background=4F46E5&color=fff`
         });
       }
-    })
-    .catch(error => {
+    }).then(data => {
+      //handleGoogleConnect(); 
+      //console.log('Redirected to Google OAuth login page=1');
+    }).catch(error => {
       console.error('Error calling backend:', error);
     });
+ 
   };
-  
+
 const handleGoogleLoginFailure = (error) => {
   console.log('Login Failed');
   console.log(error);
@@ -385,17 +388,33 @@ const CategoriesList = ({ categories, showForm, newCategory, onNewCategoryChange
 };
 
 // Email Item Component
-const EmailItem = ({ email, isSelected, onToggle }) => {
+const EmailItem = ({ email, isSelected, onToggle, onClick }) => {
+  const handleClick = (e) => {
+    // Don't open modal if clicking checkbox
+    if (e.target.type === 'checkbox') {
+      e.stopPropagation();
+      return;
+    }
+    onClick();
+  };
+
+  const handleCheckboxClick = (e) => {
+    e.stopPropagation();
+    onToggle();
+  };
+
   return (
     <div
-      className={`bg-white rounded-xl shadow-sm p-5 transition-all duration-200 border-2 ${isSelected ? 'border-indigo-500 shadow-md' : 'border-gray-200 hover:border-gray-300'
+      onClick={handleClick}
+      className={`bg-white rounded-xl shadow-sm p-5 transition-all duration-200 border-2 cursor-pointer ${isSelected ? 'border-indigo-500 shadow-md' : 'border-gray-200 hover:border-indigo-300 hover:shadow-md'
         }`}
     >
       <div className="flex items-start space-x-4">
         <input
           type="checkbox"
           checked={isSelected}
-          onChange={onToggle}
+          onChange={handleCheckboxClick}
+          onClick={handleCheckboxClick}
           className="w-5 h-5 mt-1 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500 cursor-pointer"
         />
         <div className="flex-1 min-w-0">
@@ -416,10 +435,122 @@ const EmailItem = ({ email, isSelected, onToggle }) => {
             </div>
           </div>
           <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 mt-3 border border-blue-100">
-            <p className="text-xs text-gray-700 leading-relaxed">
+            <p className="text-xs text-gray-700 leading-relaxed line-clamp-2">
               <span className="font-semibold text-indigo-700">AI Summary: </span>
               {email.summary}
             </p>
+          </div>
+        </div>
+        <div className="w-5 h-5 text-gray-400 flex-shrink-0 mt-1">
+          <ChevronRightIcon />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Email Detail Page Component
+const EmailDetailPage = ({ email, user, onBack, onDelete, onUnsubscribe, processing }) => {
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <Header user={user} onSignOut={() => { }} />
+
+      <div className="max-w-5xl mx-auto p-6">
+        {/* Back Button */}
+        <button
+          onClick={onBack}
+          className="flex items-center text-gray-600 hover:text-gray-900 mb-6 transition"
+        >
+          <div className="w-5 h-5 transform rotate-180 mr-2">
+            <ChevronRightIcon />
+          </div>
+          Back to Emails
+        </button>
+
+        {/* AI Summary Card */}
+        <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-6 mb-6 border-2 border-indigo-200">
+          <div className="flex items-start space-x-3">
+            <div className="w-6 h-6 flex-shrink-0 mt-1 text-indigo-600">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <h3 className="text-sm font-bold text-indigo-900 mb-2 uppercase tracking-wide">AI Summary</h3>
+              <p className="text-base text-gray-800 leading-relaxed">{email.summary}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Email Content Card */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          {/* Email Header */}
+          <div className="border-b border-gray-200 p-6 bg-gray-50">
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">{email.subject}</h1>
+
+            <div className="space-y-3">
+              <div className="flex items-start">
+                <span className="text-sm font-semibold text-gray-500 w-24 flex-shrink-0">From:</span>
+                <span className="text-sm text-gray-900 font-medium">{email.from}</span>
+              </div>
+
+              <div className="flex items-start">
+                <span className="text-sm font-semibold text-gray-500 w-24 flex-shrink-0">Date:</span>
+                <span className="text-sm text-gray-900">
+                  {new Date(email.receivedAt).toLocaleString('en-US', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </span>
+              </div>
+
+              {email.archived && (
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm font-semibold text-gray-500 w-24 flex-shrink-0">Status:</span>
+                  <div className="flex items-center space-x-2 text-green-600">
+                    <div className="w-4 h-4">
+                      <ArchiveIcon />
+                    </div>
+                    <span className="text-sm font-medium">Archived in Gmail</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Email Body */}
+          <div className="p-6">
+            <div className="prose prose-sm max-w-none">
+              <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">{email.body}</p>
+            </div>
+          </div>
+
+          {/* Actions Footer */}
+          <div className="border-t border-gray-200 p-6 bg-gray-50 flex justify-end items-center space-x-3">
+            <button
+              onClick={onUnsubscribe}
+              disabled={processing}
+              className="flex items-center px-5 py-2.5 bg-orange-500 text-white rounded-lg font-semibold hover:bg-orange-600 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
+            >
+              <div className="w-4 h-4 mr-2">
+                <UserXIcon />
+              </div>
+              Unsubscribe
+            </button>
+            <button
+              onClick={onDelete}
+              disabled={processing}
+              className="flex items-center px-5 py-2.5 bg-red-500 text-white rounded-lg font-semibold hover:bg-red-600 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
+            >
+              <div className="w-4 h-4 mr-2">
+                <TrashIcon />
+              </div>
+              Delete
+            </button>
           </div>
         </div>
       </div>
@@ -428,7 +559,7 @@ const EmailItem = ({ email, isSelected, onToggle }) => {
 };
 
 // Category View Component
-const CategoryView = ({ category, emails, selectedEmails, onBack, onToggleEmail, onSelectAll, onBulkDelete, onBulkUnsubscribe, processing }) => {
+const CategoryView = ({ category, emails, selectedEmails, onBack, onToggleEmail, onSelectAll, onBulkDelete, onBulkUnsubscribe, onEmailClick, processing }) => {
   const allSelected = emails.length > 0 && selectedEmails.length === emails.length;
 
   return (
@@ -502,6 +633,7 @@ const CategoryView = ({ category, emails, selectedEmails, onBack, onToggleEmail,
                   email={email}
                   isSelected={selectedEmails.includes(email.id)}
                   onToggle={() => onToggleEmail(email.id)}
+                  onClick={() => onEmailClick(email)}
                 />
               ))}
             </div>
@@ -552,11 +684,47 @@ export default function EmailSorterApp() {
   const [newCategory, setNewCategory] = useState({ name: '', description: '' });
   const [selectedEmails, setSelectedEmails] = useState([]);
   const [processing, setProcessing] = useState(false);
+  const [selectedEmailDetail, setSelectedEmailDetail] = useState(null);
 
   useEffect(() => {
     loadData();
-    verifySession(); // Verify session with backend on page load
+    const checkSession = async () => {
+      await verifySession(); // Wait for verifySession to complete
+      console.log('verifySession() completed'); // Now this runs AFTER verifySession completes
+      await fetchAndSetCategories();
+      const savedUser = localStorage.getItem('user');
+      if (savedUser) {
+        const userData = JSON.parse(savedUser);
+        // Call fetchInboxEmails after a short delay to ensure categories are fetched first
+        //fetchInboxEmails(userData);
+        processEmails(userData);
+      }
+    };
+    checkSession();
+    console.log('checkSession() completed');
+    
+    // Check if we're returning from OAuth callback
+    const urlParams = new URLSearchParams(window.location.search);
+    const oauthSuccess = urlParams.get('oauth_success');
+    
+    if (oauthSuccess === 'true') {
+      console.log('OAuth callback detected - fetching categories and emails after redirect');
+      // Clean up URL by removing the parameter
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, '', newUrl);
+      
+    } 
+    
   }, []);
+
+  // Fetch emails for the selected category
+  useEffect(() => {
+    console.log("in useEffect() >> selectedCategory changed: ", selectedCategory);
+    
+    
+    
+    //fetchEmailsForCategory();
+  }, [selectedCategory]); // Only refetch when selectedCategory changes
 
   const loadData = () => {
     const savedUser = localStorage.getItem('user');
@@ -568,6 +736,33 @@ export default function EmailSorterApp() {
     if (savedAccounts) setAccounts(JSON.parse(savedAccounts));
     if (savedCategories) setCategories(JSON.parse(savedCategories));
     if (savedEmails) setEmails(JSON.parse(savedEmails));
+  };
+
+  // Call FastAPI resource auth/google/connect which returns authorization URL for Google OAuth
+  // This function is used to initiate Gmail API OAuth flow
+  const handleGoogleConnect = async () => {
+    console.log('handleGoogleConnect() running');
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+    const response = await fetch(`${apiUrl}/auth/google/connect`, {
+      method: 'GET',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-control-allow-origin': '*'
+      },
+    }); 
+    console.log('Response from auth/google/connect:', response);
+    if (response.ok) {
+      const data = await response.json();
+      if (data.authorization_url) {
+        // Redirect user to Google OAuth consent screen
+        window.location.href = data.authorization_url;
+      } else {
+        console.error('No authorization_url in response:', data);
+      }
+    } else {
+      console.error('Error calling backend:', response.statusText);
+    }
   };
 
   // Verify session with backend on page load
@@ -593,7 +788,10 @@ export default function EmailSorterApp() {
         localStorage.setItem('user', JSON.stringify(user));
         
         // Fetch categories for authenticated user
-        fetchAndSetCategories();
+        //fetchAndSetCategories();
+        
+        // Note: Gmail OAuth will be triggered automatically when user tries to fetch emails
+        // and tokens are missing (handled in useEffect for selectedCategory)
       } else {
         // Session expired or invalid, clear local data
         if (response.status === 401) {
@@ -613,6 +811,7 @@ export default function EmailSorterApp() {
 
   // Fetch categories from backend API and update UI
   const fetchAndSetCategories = async () => {
+    console.log('fetchAndSetCategories() running');
     const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
     
     try {
@@ -659,11 +858,166 @@ export default function EmailSorterApp() {
   const handleLogin = (userData) => {
     setUser(userData);
     saveData('user', userData);
-    fetchAndSetCategories(); // Fetch and set categories for the user
+
+    // Don't call fetchAndSetCategories here because handleGoogleConnect redirects
+    // It will be called after OAuth redirect completes (see useEffect above)
+    handleGoogleConnect();
+    console.log('Redirected to Google OAuth login page-ddd');
+    // Note: fetchAndSetCategories() will be called after OAuth redirect completes
+    
+    // fetchInboxEmails() will also need to wait for OAuth completion
+    // It should be called after OAuth redirect or when user explicitly requests it
 
     const newAccounts = [{ email: userData.email, connected: true }];
     setAccounts(newAccounts);
+    
+    // Note: Gmail OAuth will be triggered automatically when user tries to fetch emails
+    // and tokens are missing (handled in useEffect for selectedCategory)
     saveData('accounts', newAccounts);
+  };
+
+  // Process emails: fetch from Gmail API, generate summaries, categorize, and save to database
+  const processEmails = async (userDataParam = null) => {
+    setProcessing(true);
+    console.log('processEmails() running');
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+    
+    // Use provided userData or get from state/localStorage
+    const userEmail = userDataParam?.email || user?.email;
+    
+    if (!userEmail) {
+      console.error('processEmails: No user email available');
+      return;
+    }
+    
+    try {
+      // Calculate timestamp (e.g., 30 days ago by default)
+      const daysBack = 30;
+      const maxResults = 10;
+      const timestamp = new Date();
+      timestamp.setDate(timestamp.getDate() - daysBack);
+      
+      const requestBody = {
+        gmail_address: userEmail,
+        timestamp: timestamp.toISOString(),
+        max_results: maxResults
+      };
+      
+      console.log('Calling /emails/process endpoint with:', requestBody);
+      
+      const response = await fetch(`${apiUrl}/emails/process`, {
+        method: 'POST',
+        credentials: 'include', // Important: Include cookies for authentication
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestBody)
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Response from /emails/process endpoint:', result);
+        
+       
+        // call   await importEmail( ); with each of the email in the result array
+        for (const email of result) {
+          await importEmail(email);
+        }
+    
+        setProcessing(false);
+
+        if (result.message) {
+          console.log(`Message: ${result.message}`);
+        }
+        if (result.length !== undefined) {
+          console.log(`Emails processed: ${result.length}`);
+        }
+
+        if (result.errors && result.errors.length > 0) {
+          console.warn('Errors during processing:', result.errors);
+        }
+        
+        // If result is an array (emails), update state
+        if (Array.isArray(result)) {
+          console.log(`Total emails returned: ${result.length}`);
+          
+          // You can process the emails array here if needed
+        }
+        
+        return result;
+      } else {
+        const errorData = await response.json();
+        console.error('Error from /emails/process endpoint:', response.status, errorData);
+        
+        if (response.status === 401) {
+          // Session expired - sign out user
+          setUser(null);
+          localStorage.clear();
+        } else if (response.status === 403) {
+          console.error('Gmail API access not configured. Please grant Gmail API access permissions.');
+        }
+        
+        throw new Error(errorData.detail || `Error processing emails: ${response.statusText}`);
+      }
+    } catch (error) {
+      console.error('Error calling /emails/process endpoint:', error);
+      throw error;
+    }
+  };
+
+  const fetchInboxEmails = async (userDataParam = null) => {
+    console.log('fetchInboxEmails() running');
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+    
+    // Use provided userData or get from state/localStorage
+    const userEmail = userDataParam?.email || user?.email;
+    
+    if (!userEmail) {
+      console.error('fetchInboxEmails: No user email available');
+      return;
+    }
+    
+    try {
+      // Calculate timestamp (e.g., 30 days ago)
+      const timestamp = new Date();
+      timestamp.setDate(timestamp.getDate() - 30); // Get emails from last 30 days
+      
+      const requestBody = {
+        gmail_address: userEmail,
+        timestamp: timestamp.toISOString(),
+        max_results: 100
+      };
+      
+      console.log('Calling /emails/inbox endpoint with:', requestBody);
+      
+      const response = await fetch(`${apiUrl}/emails/inbox`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestBody)
+      });
+      
+      if (response.ok) {
+        const emails = await response.json();
+        console.log('Response from /emails/inbox endpoint:', emails);
+        console.log(`Total emails fetched: ${emails.length}`);
+        emails.forEach((email, index) => {
+          console.log(`Email ${index + 1}:`, {
+            id: email.id,
+            subject: email.subject,
+            sender: email.sender,
+            received_at: email.received_at,
+          });
+        });
+      } else {
+        const errorData = await response.json();
+        console.error('Error from /emails/inbox endpoint:', response.status, errorData);
+      }
+    } catch (error) {
+      console.error('Error calling /emails/inbox endpoint:', error);
+    }
   };
 
   const handleSignOut = async () => {
@@ -689,18 +1043,46 @@ export default function EmailSorterApp() {
   };
 
   const addCategory = () => {
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
     if (newCategory.name && newCategory.description) {
-      const category = {
-        id: Date.now().toString(),
+      const categoryData = {
         name: newCategory.name,
         description: newCategory.description,
-        emailCount: 0
       };
-      const updated = [...categories, category];
-      setCategories(updated);
-      saveData('categories', updated);
-      setNewCategory({ name: '', description: '' });
-      setShowCategoryForm(false);
+
+      fetch(`${apiUrl}/categories`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include', // Include cookies in request
+        body: JSON.stringify(categoryData),
+      })
+        .then(response => {
+          if (!response.ok) {
+            return response.json().then(err => {
+              throw new Error(JSON.stringify(err));
+            });
+          }
+          return response.json();
+        })
+        .then(data => {
+          const category = {
+            id: data.id.toString(),
+            name: data.name,
+            description: data.description,
+            emailCount: 0,
+          };
+          const updated = [...categories, category];
+          setCategories(updated);
+          saveData('categories', updated);
+          setNewCategory({ name: '', description: '' });
+          setShowCategoryForm(false);
+        })
+        .catch(error => {
+          console.error('Error adding category:', error);
+        });
     }
   };
 
@@ -830,6 +1212,37 @@ export default function EmailSorterApp() {
     setProcessing(false);
   };
 
+  const handleEmailClick = (email) => {
+    setSelectedEmailDetail(email);
+  };
+
+  const handleDeleteEmailDetail = async () => {
+    if (selectedEmailDetail) {
+      setProcessing(true);
+      const updated = emails.filter(e => e.id !== selectedEmailDetail.id);
+      setEmails(updated);
+      saveData('emails', updated);
+
+      const updatedCategories = categories.map(c => ({
+        ...c,
+        emailCount: updated.filter(e => e.categoryId === c.id).length
+      }));
+      setCategories(updatedCategories);
+      saveData('categories', updatedCategories);
+
+      setSelectedEmailDetail(null);
+      setProcessing(false);
+    }
+  };
+
+  const handleUnsubscribeEmailDetail = async () => {
+    if (selectedEmailDetail) {
+      setProcessing(true);
+      alert(`Unsubscribe requested for: ${selectedEmailDetail.subject}`);
+      await handleDeleteEmailDetail();
+    }
+  };
+
   if (!user) {
     return <LoginScreen onLogin={handleLogin} />;
   }
@@ -837,6 +1250,21 @@ export default function EmailSorterApp() {
   if (selectedCategory) {
     const categoryEmails = emails.filter(e => e.categoryId === selectedCategory.id);
 
+    // Show email detail page if an email is selected
+    if (selectedEmailDetail) {
+      return (
+        <EmailDetailPage
+          email={selectedEmailDetail}
+          user={user}
+          onBack={() => setSelectedEmailDetail(null)}
+          onDelete={handleDeleteEmailDetail}
+          onUnsubscribe={handleUnsubscribeEmailDetail}
+          processing={processing}
+        />
+      );
+    }
+
+    // Show category email list
     return (
       <CategoryView
         category={selectedCategory}
@@ -847,6 +1275,7 @@ export default function EmailSorterApp() {
         onSelectAll={selectAllEmails}
         onBulkDelete={bulkDelete}
         onBulkUnsubscribe={bulkUnsubscribe}
+        onEmailClick={handleEmailClick}
         processing={processing}
       />
     );

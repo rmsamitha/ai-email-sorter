@@ -15,6 +15,10 @@ class UserAccount(Base):
 
     name = Column(String, nullable=True)
     picture = Column(String, nullable=True)
+    
+    # OAuth 2.0 tokens for Gmail API access
+    access_token = Column(Text, nullable=True)  # OAuth 2.0 access token
+    refresh_token = Column(Text, nullable=True)  # OAuth 2.0 refresh token
 
     # Relationships
     categories = relationship("Category", back_populates="account", cascade="all, delete-orphan")
@@ -43,6 +47,9 @@ class Email(Base):
     received_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
     summary = Column(Text)
     summary_created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    subject = Column(String, nullable=True)
+    sender = Column(String, nullable=True)
+    body = Column(Text, nullable=True)
 
     # Relationships
     account = relationship("UserAccount", back_populates="emails")
